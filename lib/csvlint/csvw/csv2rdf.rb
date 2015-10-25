@@ -91,12 +91,12 @@ module Csvlint
             end
           else
             v.schema.annotations.each do |a,v|
-              # @result[a] = Csv2Rdf.transform_annotation(v)
+              transform_annotation(@table_group, a, v)
             end
             table = v.schema.tables[@source]
             # @result["tables"][-1]["@id"] = table.id.to_s if table.id
             table.annotations.each do |a,v|
-              # @result["tables"][-1][a] = Csv2Rdf.transform_annotation(v)
+              transform_annotation(@table, a, v)
             end
             # @result["tables"][-1]["notes"] = Csv2Rdf.transform_annotation(table.notes) unless table.notes.empty?
             if table.columns.empty?
@@ -126,10 +126,10 @@ module Csvlint
               if data[i].is_a? Array
                 v = []
                 data[i].each do |d|
-                  v << Csv2Rdf.value_to_json(d, base_type)
+                  v << Csv2Rdf.value_to_rdf(d, base_type)
                 end
               else
-                v = Csv2Rdf.value_to_json(data[i], base_type)
+                v = Csv2Rdf.value_to_rdf(data[i], base_type)
               end
               values[column_name] = v
             end
@@ -168,6 +168,34 @@ module Csvlint
           end
 
           return subjects.uniq, row_titles
+        end
+
+        def transform_annotation(subject, property, value)
+          property = RDF::Resource.new(Csv2Rdf.expand_prefixes(property)) unless property.is_a? RDF::Resource
+          case value
+          when Hash
+            if value["@id"]
+              @result << [ subject, property, RDF::Resource.new(value["@id"]) ]
+            elsif value["@value"]
+              if value["@type"]
+                @result << [ subject, property, RDF::Literal.new(value["@value"], :datatype => Csv2Rdf.expand_prefixes(value["@type"])) ]
+              else
+                @result << [ subject, property, RDF::Literal.new(value["@value"], :language => value["@language"]) ]
+              end
+            else
+              object = RDF::Node.new
+              @result << [ subject, property, object ]
+              value.each do |a,v|
+                transform_annotation(object, a, v)
+              end
+            end
+          when Array
+            value.each do |v|
+              transform_annotation(subject, property, v)
+            end
+          else
+            @result << [ subject, property, RDF::Literal.new(value, :language => "en") ]
+          end 
         end
 
         def property(column, values)
@@ -227,57 +255,32 @@ module Csvlint
           return object
         end
 
-        def Csv2Rdf.value_to_json(value, base_type)
+        def Csv2Rdf.value_to_rdf(value, base_type)
           if value.is_a? Float
             if value.nan?
-              return "NaN"
+              return RDF::Literal.new("NaN", :datatype => base_type)
             elsif value == Float::INFINITY
-              return "INF"
+              return RDF::Literal.new("INF", :datatype => base_type)
             elsif value == -Float::INFINITY
-              return "-INF"
+              return RDF::Literal.new("-INF", :datatype => base_type)
             else
-              return value
+              return RDF::Literal.new(value, :datatype => base_type)
             end
           elsif NUMERIC_DATATYPES.include? base_type
-            return value
+            return RDF::Literal.new(value, :datatype => base_type)
           elsif base_type == "http://www.w3.org/2001/XMLSchema#boolean"
             return value
           elsif DATETIME_DATATYPES.include? base_type
-            return value if value.is_a? String
-            return value[:string]
+            return RDF::Literal.new(value, :datatype => base_type) if value.is_a? String
+            return RDF::Literal.new(value[:string], :datatype => base_type)
           else
-            return value.to_s
+            return RDF::Literal.new(value.to_s, :datatype => base_type)
           end
-        end
-
-        def Csv2Rdf.transform_annotation(value)
-          case value
-          when Hash
-            if value["@id"]
-              return value["@id"].to_s
-            elsif value["@value"]
-              return value["@value"]
-            else
-              result = {}
-              value.each do |a,v|
-                result[a] = transform_annotation(v)
-              end
-              return result
-            end
-          when Array
-            result = []
-            value.each do |v|
-              result << transform_annotation(v)
-            end
-            return result
-          else
-            return value
-          end 
         end
 
         def Csv2Rdf.expand_prefixes(url)
           NAMESPACES.each do |prefix,ns|
-            url.gsub!(Regexp.new("^#{Regexp.escape(prefix)}:"), "#{ns}")
+            url = url.gsub(Regexp.new("^#{Regexp.escape(prefix)}:"), "#{ns}")
           end
           return url
         end
