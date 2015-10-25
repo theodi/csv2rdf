@@ -211,10 +211,11 @@ module Csvlint
         def property(column, values)
           if column.property_url
             url = column.property_url.expand(values)
-            url = URI.join(@source, url).to_s
+            url = Csv2Rdf.expand_prefixes(url)
+            url = URI.join(@source, url)
           else
             url = column.name || column.default_name || "_col.#{column.number}"
-            url = URI.join(@source, "##{URI.escape(url)}").to_s
+            url = URI.join(@source, "##{URI.escape(url)}")
           end
           return RDF::Resource.new(url)
         end
@@ -228,41 +229,6 @@ module Csvlint
             url = URI.join(@source, url)
             return RDF::Resource.new(url)
           end
-        end
-
-        def nest(objects, value_urls_appearing_once, value_urls_appearing_many_times)
-          root_objects = []
-          root_object_urls = []
-          first_object_url = nil
-          objects.each do |url,object|
-            first_object_url = url if first_object_url.nil?
-            if value_urls_appearing_many_times.include? url
-              root_object_urls << url
-            elsif !(value_urls_appearing_once.include? url)
-              root_object_urls << url
-            end
-          end
-          root_object_urls << first_object_url if root_object_urls.empty?
-
-          root_object_urls.each do |url|
-            root_objects << nest_recursively(objects[url], root_object_urls, objects)
-          end
-          return root_objects
-        end
-
-        def nest_recursively(object, root_object_urls, objects)
-          object.each do |prop,value|
-            if value.is_a? URI
-              if root_object_urls.include?(value.to_s) || objects[value.to_s].nil?
-                object[prop] = value.to_s
-              else
-                object[prop] = nest_recursively(objects[value.to_s], root_object_urls, objects)
-              end
-            elsif value.is_a? Hash
-              object[prop] = nest_recursively(value, root_object_urls, objects)
-            end
-          end
-          return object
         end
 
         def Csv2Rdf.value_to_rdf(value, base_type)
@@ -291,14 +257,6 @@ module Csvlint
         def Csv2Rdf.expand_prefixes(url)
           NAMESPACES.each do |prefix,ns|
             url = url.gsub(Regexp.new("^#{Regexp.escape(prefix)}:"), "#{ns}")
-          end
-          return url
-        end
-
-        def Csv2Rdf.compact_url(url)
-          NAMESPACES.each do |prefix,ns|
-            url.gsub!(Regexp.new("^#{Regexp.escape(ns)}$"), "#{prefix}")
-            url.gsub!(Regexp.new("^#{Regexp.escape(ns)}"), "#{prefix}:")
           end
           return url
         end
