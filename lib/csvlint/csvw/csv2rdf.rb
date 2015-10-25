@@ -176,7 +176,7 @@ module Csvlint
             url = URI.join(@source, url).to_s
           else
             url = column.name || column.default_name || "_col.#{column.number}"
-            url = URI.join(@source, "##{url}").to_s
+            url = URI.join(@source, "##{URI.escape(url)}").to_s
           end
           return RDF::Resource.new(url)
         end
