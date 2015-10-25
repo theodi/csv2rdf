@@ -194,7 +194,7 @@ module Csvlint
               transform_annotation(subject, property, v)
             end
           else
-            @result << [ subject, property, RDF::Literal.new(value, :language => "en") ]
+            @result << [ subject, property, value ]
           end 
         end
 
