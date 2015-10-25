@@ -18,11 +18,13 @@ module Csvlint
 
         if schema.nil?
           @table_group = RDF::Node.new
-          @result << [ @table_group, RDF.type, CSVW.TableGroup ]
           @table = RDF::Node.new
-          @result << [ @table_group, CSVW.table, @table ]
-          @result << [ @table, RDF.type, CSVW.Table ]
-          @result << [ @table, CSVW.url, RDF::Resource.new(@source) ]
+          unless @minimal
+            @result << [ @table_group, RDF.type, CSVW.TableGroup ]
+            @result << [ @table_group, CSVW.table, @table ]
+            @result << [ @table, RDF.type, CSVW.Table ]
+            @result << [ @table, CSVW.url, RDF::Resource.new(@source) ]
+          end
 
           @rownum = 0
           @columns = []
@@ -32,14 +34,16 @@ module Csvlint
           @warnings += @validator.warnings
         else
           @table_group = RDF::Node.new
-          @result << [ @table_group, RDF.type, CSVW.TableGroup ]
+          @result << [ @table_group, RDF.type, CSVW.TableGroup ] unless @minimal
 
           schema.tables.each do |table_url, table|
             @source = table_url
             @table = RDF::Node.new
-            @result << [ @table_group, CSVW.table, @table ]
-            @result << [ @table, RDF.type, CSVW.Table ]
-            @result << [ @table, CSVW.url, RDF::Resource.new(@source) ]
+            unless @minimal
+              @result << [ @table_group, CSVW.table, @table ]
+              @result << [ @table, RDF.type, CSVW.Table ]
+              @result << [ @table, CSVW.url, RDF::Resource.new(@source) ]
+            end
 
             @rownum = 0
             @columns = []
@@ -64,12 +68,14 @@ module Csvlint
               @rownum += 1
               @row = RDF::Node.new
               row_data, row_titles = transform_data(v.data[-1], v.current_line)
-              @result << [ @table, CSVW.row, @row ]
-              @result << [ @row, RDF.type, CSVW.Row ]
-              @result << [ @row, CSVW.rownum, @rownum ]
-              @result << [ @row, CSVW.url, RDF::Resource.new("#{@source}#row=#{v.current_line}") ]
-              row_data.each do |r|
-                @result << [ @row, CSVW.describes, r ]
+              unless @minimal
+                @result << [ @table, CSVW.row, @row ]
+                @result << [ @row, RDF.type, CSVW.Row ]
+                @result << [ @row, CSVW.rownum, @rownum ]
+                @result << [ @row, CSVW.url, RDF::Resource.new("#{@source}#row=#{v.current_line}") ]
+                row_data.each do |r|
+                  @result << [ @row, CSVW.describes, r ]
+                end
               end
 
               row["titles"] = (row_titles.length == 1 ? row_titles[0] : row_titles) unless row_titles.empty?
@@ -90,15 +96,19 @@ module Csvlint
               @columns.push Csvlint::Csvw::Column.new(i+1, h)
             end
           else
-            v.schema.annotations.each do |a,v|
-              transform_annotation(@table_group, a, v)
-            end
             table = v.schema.tables[@source]
-            # @result["tables"][-1]["@id"] = table.id.to_s if table.id
-            table.annotations.each do |a,v|
-              transform_annotation(@table, a, v)
+            
+            unless @minimal
+              v.schema.annotations.each do |a,v|
+                transform_annotation(@table_group, a, v)
+              end
+              # @result["tables"][-1]["@id"] = table.id.to_s if table.id
+              table.annotations.each do |a,v|
+                transform_annotation(@table, a, v)
+              end
+              # @result["tables"][-1]["notes"] = Csv2Rdf.transform_annotation(table.notes) unless table.notes.empty?
             end
-            # @result["tables"][-1]["notes"] = Csv2Rdf.transform_annotation(table.notes) unless table.notes.empty?
+
             if table.columns.empty?
               v.data[0].each_with_index do |h,i|
                 @columns.push Csvlint::Csvw::Column.new(i+1, "_col.#{i+1}")
