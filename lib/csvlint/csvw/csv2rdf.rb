@@ -97,7 +97,7 @@ module Csvlint
             end
           else
             table = v.schema.tables[@source]
-            
+
             unless @minimal
               v.schema.annotations.each do |a,v|
                 transform_annotation(@table_group, a, v)
@@ -226,7 +226,7 @@ module Csvlint
             url = column.value_url.expand(values)
             url = Csv2Rdf.expand_prefixes(url) unless compact
             url = URI.join(@source, url)
-            return url
+            return RDF::Resource.new(url)
           end
         end
 
