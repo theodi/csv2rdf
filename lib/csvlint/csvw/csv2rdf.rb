@@ -32,7 +32,7 @@ module Csvlint
           @warnings += @validator.warnings
         else
           @table_group = RDF::Node.new
-          @result << [ table_group, RDF.type, CSVW.TableGroup ]
+          @result << [ @table_group, RDF.type, CSVW.TableGroup ]
 
           schema.tables.each do |table_url, table|
             @source = table_url
