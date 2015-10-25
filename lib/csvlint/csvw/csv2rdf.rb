@@ -40,9 +40,11 @@ module Csvlint
             @source = table_url
             @table = RDF::Node.new
             unless @minimal
-              @result << [ @table_group, CSVW.table, @table ]
-              @result << [ @table, RDF.type, CSVW.Table ]
-              @result << [ @table, CSVW.url, RDF::Resource.new(@source) ]
+              unless table.suppress_output
+                @result << [ @table_group, CSVW.table, @table ]
+                @result << [ @table, RDF.type, CSVW.Table ]
+                @result << [ @table, CSVW.url, RDF::Resource.new(@source) ]
+              end
             end
 
             @rownum = 0
