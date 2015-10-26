@@ -165,8 +165,17 @@ module Csvlint
               end
 
               unless value.nil?
-                Array(value).each do |v|
-                  @result << [ subject, property, v ]
+                if column.separator && column.ordered
+                  list = RDF::List[]
+                  list[0..Array(value).length] = Array(value)
+                  @result << [ subject, property, list.subject ]
+                  list.each_statement do |s|
+                    @result << s
+                  end
+                else
+                  Array(value).each do |v|
+                    @result << [ subject, property, v ]
+                  end
                 end
               end
             end
