@@ -10,6 +10,7 @@ class EarlFormatter
     @graph << [ CSV2RDF, RDF.type, EARL.Software ]
     @graph << [ CSV2RDF, RDF::DOAP.name, "csv2rdf" ]
     @graph << [ CSV2RDF, RDF::DC.title, "csv2rdf" ]
+    @graph << [ CSV2RDF, RDF::DOAP.description, "CSV to RDF converter" ]
     @graph << [ CSV2RDF, RDF::DOAP.homepage, RDF::Resource.new("https://github.com/theodi/csvlint.rb") ]
     @graph << [ CSV2RDF, RDF::DOAP.license, RDF::Resource.new("https://raw.githubusercontent.com/theodi/csvlint.rb/master/LICENSE.md") ]
     @graph << [ CSV2RDF, RDF::DOAP["programming-language"], "Ruby" ]
