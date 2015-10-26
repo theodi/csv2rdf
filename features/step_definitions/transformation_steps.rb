@@ -64,8 +64,17 @@ When(/^I transform the CSV into RDF( in minimal mode)?$/) do |minimal|
 end
 
 Then(/^the RDF should match that in "(.*?)"$/) do |filename|
-  expected = RDF::Graph.load( File.join( File.dirname(__FILE__), "..", "fixtures", filename ), format: :ttl )
+  loaded = RDF::Graph.load( File.join( File.dirname(__FILE__), "..", "fixtures", filename ), format: :ttl )
   actual = @rdf
+  expected = RDF::Graph.new
+  # floats read as integers don't get canonicalised properly, so aren't compared properly
+  # this hack adjusts those floats so that they are read into RDF::Literal::Double values
+  # so that they are canonicalised properly when written to Turtle
+  loaded.statements.each do |s|
+    o = s.object
+    s.object = RDF::Literal(["INF", "-INF", "NaN"].include?(o.value) ? o.value : o.value.to_f, datatype: RDF::XSD.float) if o.is_a? RDF::Literal and o.has_datatype? and o.datatype == RDF::XSD.float
+    expected << s
+  end
   actual_writer = RDF::Writer.for(:ttl)
   expected_writer = RDF::Writer.for(:ttl)
   actual_ttl = actual_writer.dump(actual, nil, { :standard_prefixes => true, :canonicalize => true, :literal_shorthand => true })
