@@ -257,6 +257,7 @@ module Csvlint
         end
 
         def Csv2Rdf.expand_prefixes(url)
+          return "http://www.w3.org/ns/csvw##{url}" if TERMS.include?(url)
           NAMESPACES.each do |prefix,ns|
             url = url.gsub(Regexp.new("^#{Regexp.escape(prefix)}:"), "#{ns}")
           end
@@ -308,6 +309,10 @@ module Csvlint
           "vcard" => "http://www.w3.org/2006/vcard/ns#",
           "schema" => "http://schema.org/"
         }
+
+        TERMS = 
+          NAMESPACES.keys +
+          [ "TableGroup", "Table", "Column", "Row", "Cell", "Schema", "Datatype", "Dialect", "Direction", "ForeignKey", "NumericFormat", "TableReference", "Transformation" ]
 
         NUMERIC_DATATYPES = [
           "http://www.w3.org/2001/XMLSchema#decimal",
