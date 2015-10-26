@@ -66,10 +66,7 @@ end
 Then(/^the RDF should match that in "(.*?)"$/) do |filename|
   expected = RDF::Graph.load( File.join( File.dirname(__FILE__), "..", "fixtures", filename ), format: :ttl )
   actual = @rdf
-  # STDERR.puts(expected.to_ttl)
-  # STDERR.puts("----")
-  # STDERR.puts(actual.to_ttl)
-  expect(actual).to eq(expected)
+  expect(actual.to_ttl).to eq(expected.to_ttl)
 end
 
 Then(/^there should be errors$/) do
