@@ -66,7 +66,11 @@ end
 Then(/^the RDF should match that in "(.*?)"$/) do |filename|
   expected = RDF::Graph.load( File.join( File.dirname(__FILE__), "..", "fixtures", filename ), format: :ttl )
   actual = @rdf
-  expect(actual.to_ttl).to eq(expected.to_ttl)
+  actual_writer = RDF::Writer.for(:ttl)
+  expected_writer = RDF::Writer.for(:ttl)
+  actual_ttl = actual_writer.dump(actual, nil, { :standard_prefixes => true, :canonicalize => true, :literal_shorthand => true })
+  expected_ttl = expected_writer.dump(expected, nil, { :standard_prefixes => true, :canonicalize => true, :literal_shorthand => true })
+  expect(actual_ttl).to eq(expected_ttl)
 end
 
 Then(/^there should be errors$/) do
