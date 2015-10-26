@@ -81,10 +81,10 @@ File.open(RDF_TRANSFORMATION_FEATURE_FILE_PATH, 'w') do |file|
 			file.puts "\t\tAnd there is no file at the url \"#{uri}\"" unless provided_files.include? uri
 		end
 		file.puts "\t\tWhen I transform the CSV into RDF#{entry["option"] && entry["option"]["minimal"] ? " in minimal mode" : ""}"
-		if entry["type"] == "csvt:ToJsonTestWithWarnings"
+		if entry["type"] == "csvt:ToRdfTestWithWarnings"
 			file.puts "\t\tThen there should not be errors"
 			file.puts "\t\tAnd there should be warnings"
-		elsif entry["type"] == "csvt:NegativeJsonTest"
+		elsif entry["type"] == "csvt:NegativeRdfTest"
 	    	file.puts "\t\tThen there should be errors"
 		else
 		    file.puts "\t\tThen there should not be errors"
