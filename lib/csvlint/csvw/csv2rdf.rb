@@ -245,15 +245,12 @@ module Csvlint
               return RDF::Literal.new(value, :datatype => base_type)
             end
           elsif NUMERIC_DATATYPES.include? base_type
-            if value.is_a? String
-              return RDF::Literal.new(value)
-            else
-              return RDF::Literal.new(value, :datatype => base_type)
-            end
+            return RDF::Literal.new(value) if value.is_a? String
+            return RDF::Literal.new(value, :datatype => base_type)
           elsif base_type == "http://www.w3.org/2001/XMLSchema#boolean"
             return value
           elsif DATETIME_DATATYPES.include? base_type
-            return RDF::Literal.new(value, :datatype => base_type) if value.is_a? String
+            return RDF::Literal.new(value) if value.is_a? String
             return RDF::Literal.new(value[:string], :datatype => base_type)
           elsif base_type == "http://www.w3.org/2001/XMLSchema#string"
             return RDF::Literal.new(value.to_s, :language => lang == "und" ? nil : lang)
