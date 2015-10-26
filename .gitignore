@@ -22,3 +22,5 @@ coverage/
 .DS_Store
 features/csvw_rdf_transformation_tests.feature
 features/fixtures/csvw
+
+csv2rdf-earl.ttl
