@@ -18,13 +18,7 @@ module Csvlint
 
         if schema.nil?
           @table_group = RDF::Node.new
-          @table = RDF::Node.new
-          unless @minimal
-            @result << [ @table_group, RDF.type, CSVW.TableGroup ]
-            @result << [ @table_group, CSVW.table, @table ]
-            @result << [ @table, RDF.type, CSVW.Table ]
-            @result << [ @table, CSVW.url, RDF::Resource.new(@source) ]
-          end
+          @result << [ @table_group, RDF.type, CSVW.TableGroup ] unless @minimal
 
           @rownum = 0
           @columns = []
@@ -38,14 +32,6 @@ module Csvlint
 
           schema.tables.each do |table_url, table|
             @source = table_url
-            @table = RDF::Node.new
-            unless @minimal
-              unless table.suppress_output
-                @result << [ @table_group, CSVW.table, @table ]
-                @result << [ @table, RDF.type, CSVW.Table ]
-                @result << [ @table, CSVW.url, RDF::Resource.new(@source) ]
-              end
-            end
 
             @rownum = 0
             @columns = []
@@ -55,9 +41,6 @@ module Csvlint
             @warnings += @validator.warnings
           end
         end
-
-        # @result = @result["tables"].map { |t| t["row"].map { |r| r["describes"] } }.flatten if @minimal
-        # @result = @result.to_json
       end
 
       private
@@ -97,18 +80,29 @@ module Csvlint
             v.data[0].each_with_index do |h,i|
               @columns.push Csvlint::Csvw::Column.new(i+1, h)
             end
+            @table = RDF::Node.new
+            unless @minimal
+              @result << [ @table_group, CSVW.table, @table ]
+              @result << [ @table, RDF.type, CSVW.Table ]
+              @result << [ @table, CSVW.url, RDF::Resource.new(@source) ]
+            end
           else
             table = v.schema.tables[@source]
+            @table = table.id ? RDF::Resource.new(table.id) : RDF::Node.new
 
             unless @minimal
               v.schema.annotations.each do |a,v|
                 transform_annotation(@table_group, a, v)
               end
-              # @result["tables"][-1]["@id"] = table.id.to_s if table.id
-              table.annotations.each do |a,v|
-                transform_annotation(@table, a, v)
+              unless table.suppress_output
+                @result << [ @table_group, CSVW.table, @table ]
+                @result << [ @table, RDF.type, CSVW.Table ]
+                @result << [ @table, CSVW.url, RDF::Resource.new(@source) ]
+                table.annotations.each do |a,v|
+                  transform_annotation(@table, a, v)
+                end
+                transform_annotation(@table, CSVW.note, table.notes) unless table.notes.empty?
               end
-              # @result["tables"][-1]["notes"] = Csv2Rdf.transform_annotation(table.notes) unless table.notes.empty?
             end
 
             if table.columns.empty?
@@ -138,10 +132,10 @@ module Csvlint
               if data[i].is_a? Array
                 v = []
                 data[i].each do |d|
-                  v << Csv2Rdf.value_to_rdf(d, base_type)
+                  v << Csv2Rdf.value_to_rdf(d, base_type, column.lang)
                 end
               else
-                v = Csv2Rdf.value_to_rdf(data[i], base_type)
+                v = Csv2Rdf.value_to_rdf(data[i], base_type, column.lang)
               end
               values[column_name] = v
             end
@@ -174,7 +168,9 @@ module Csvlint
               end
 
               unless value.nil?
-                @result << [ subject, property, value ]
+                Array(value).each do |v|
+                  @result << [ subject, property, v ]
+                end
               end
             end
           end
@@ -198,7 +194,11 @@ module Csvlint
               object = RDF::Node.new
               @result << [ subject, property, object ]
               value.each do |a,v|
-                transform_annotation(object, a, v)
+                if a == "@type"
+                  @result << [ object, RDF.type, RDF::Resource.new(Csv2Rdf.expand_prefixes(v)) ]
+                else
+                  transform_annotation(object, a, v)
+                end
               end
             end
           when Array
@@ -233,7 +233,7 @@ module Csvlint
           end
         end
 
-        def Csv2Rdf.value_to_rdf(value, base_type)
+        def Csv2Rdf.value_to_rdf(value, base_type, lang)
           if value.is_a? Float
             if value.nan?
               return RDF::Literal.new("NaN", :datatype => base_type)
@@ -251,6 +251,8 @@ module Csvlint
           elsif DATETIME_DATATYPES.include? base_type
             return RDF::Literal.new(value, :datatype => base_type) if value.is_a? String
             return RDF::Literal.new(value[:string], :datatype => base_type)
+          elsif base_type == "http://www.w3.org/2001/XMLSchema#string"
+            return RDF::Literal.new(value.to_s, :language => lang == "und" ? nil : lang)
           else
             return RDF::Literal.new(value.to_s, :datatype => base_type)
           end
@@ -287,6 +289,12 @@ module Csvlint
           "xhv" => "http://www.w3.org/1999/xhtml/vocab#",
           "xml" => "http://www.w3.org/XML/1998/namespace",
           "xsd" => "http://www.w3.org/2001/XMLSchema#",
+          "csvw" => "http://www.w3.org/ns/csvw#",
+          "cnt" => "http://www.w3.org/2008/content",
+          "earl" => "http://www.w3.org/ns/earl#",
+          "ht" => "http://www.w3.org/2006/http#",
+          "oa" => "http://www.w3.org/ns/oa#",
+          "ptr" => "http://www.w3.org/2009/pointers#",
           "cc" => "http://creativecommons.org/ns#",
           "ctag" => "http://commontag.org/ns#",
           "dc" => "http://purl.org/dc/terms/",
