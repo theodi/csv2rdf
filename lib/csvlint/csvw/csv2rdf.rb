@@ -52,7 +52,7 @@ module Csvlint
             if v.current_line > v.dialect["headerRowCount"]
               @rownum += 1
               @row = RDF::Node.new
-              row_data, row_titles = transform_data(v.data[-1], v.current_line)
+              row_data = transform_data(v.data[-1], v.current_line)
               unless @minimal
                 @result << [ @table, CSVW.row, @row ]
                 @result << [ @row, RDF.type, CSVW.Row ]
@@ -62,9 +62,6 @@ module Csvlint
                   @result << [ @row, CSVW.describes, r ]
                 end
               end
-
-              row["titles"] = (row_titles.length == 1 ? row_titles[0] : row_titles) unless row_titles.empty?
-              # @result["tables"][-1]["row"] << row
             end
           else
             build_errors(:blank_rows, :structure)
@@ -143,10 +140,9 @@ module Csvlint
           values["_row"] = @rownum
           values["_sourceRow"] = sourceRow
 
-          row_titles = []
           @row_title_columns.each do |column_name|
-            row_titles << values[column_name]
-          end
+            @result << [ @row, CSVW.title, values[column_name] ]
+          end unless @minimal
 
           row_subject = RDF::Node.new
           subjects = []
@@ -175,7 +171,7 @@ module Csvlint
             end
           end
 
-          return subjects.uniq, row_titles
+          return subjects.uniq
         end
 
         def transform_annotation(subject, property, value)
