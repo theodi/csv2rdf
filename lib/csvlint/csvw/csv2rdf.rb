@@ -217,7 +217,7 @@ module Csvlint
             url = URI.join(@source, url)
           else
             url = column.name || column.default_name || "_col.#{column.number}"
-            url = URI.join(@source, "##{URI.escape(url, Regexp.new("[^#{URI::PATTERN::UNRESERVED}]"))}")
+            url = URI.join(@source, "##{URI.escape(url, Regexp.new("[^A-Za-z0-9_.]"))}")
           end
           return RDF::Resource.new(url)
         end
