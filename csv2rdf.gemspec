@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |spec|
   spec.name          = "csv2rdf"
-  spec.version       = "0.1"
+  spec.version       = "0.2"
   spec.authors       = ["JeniT"]
   spec.email         = ["jeni@jenitennison.com"]
   spec.description   = %q{CSV to RDF Converter}
@@ -18,6 +18,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "rdf"
+  spec.add_dependency "csvlint"
   # spec.add_dependency "mime-types"
   # spec.add_dependency "colorize"
   # spec.add_dependency "open_uri_redirections"

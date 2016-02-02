@@ -52,7 +52,7 @@ When(/^I transform the CSV into RDF( in minimal mode)?$/) do |minimal|
       end
     end
 
-    transformer = Csvlint::Csvw::Csv2Rdf.new( @url, @csv_options, @schema, { :minimal => minimal } )
+    transformer = Csvlint::Csvw::Csv2Rdf::Csv2Rdf.new( @url, @csv_options, @schema, { :minimal => minimal } )
     @rdf = transformer.result
     @errors = transformer.errors
     @warnings = transformer.warnings

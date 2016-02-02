@@ -5,7 +5,7 @@ $:.unshift File.join( File.dirname(__FILE__), "..", "..", "lib")
 
 require 'rspec/expectations'
 require 'cucumber/rspec/doubles'
-require 'csvlint/csvw/csv2rdf'
+require 'csvlint/csvw/csv2rdf/csv2rdf'
 require 'rdf/turtle'
 require 'rdf/isomorphic'
 require 'pry'
@@ -19,7 +19,7 @@ end
 require 'spork'
 
 Spork.each_run do
-  require 'csvlint/csvw/csv2rdf'
+  require 'csvlint/csvw/csv2rdf/csv2rdf'
 end
 
 class CustomWorld
