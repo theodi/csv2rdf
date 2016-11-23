@@ -3,3 +3,10 @@
 # CSV 2 RDF
 
 A ruby gem to convert CSV to RDF, following the CSV on the Web specification.
+
+
+## Installation
+
+    $ gem install csv2rdf
+    
+
