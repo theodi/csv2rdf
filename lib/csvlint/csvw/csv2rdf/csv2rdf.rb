@@ -11,7 +11,7 @@ module Csvlint::Csvw::Csv2Rdf
     def initialize(source, dialect = {}, schema = nil, options = {})
       reset
       @source = source
-      @source_url = "file:#{File.absolute_path(@source)}" if @source.instance_of? File
+      @source_url = if @source.instance_of? File then "file:#{File.absolute_path(@source)}" else source end
       @result = RDF::Graph.new
       @minimal = options[:minimal] || false
       @validate = options[:validate] || false
